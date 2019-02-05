@@ -1,0 +1,313 @@
+---
+title: '471'
+author: "Jiajian Huang"
+date: "1/17/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ISLR)
+library(fields)
+library(rgl)
+library(readbitmap)
+library(imager)
+library(readr)
+library(pander); library(mice); library(Epi)
+library(gridExtra); library(vcd); library(Hmisc)
+library(mosaic); library(forcats); library(tidyverse)
+library(OpenImageR)
+library(MASS)
+library(class)
+```
+
+# HW 1
+## Q1
+
+a. The given experiment has extremely large sample size of `n`, and the number of predictors `p` is very small, so the fixible statistical learning be used, since the large number of parameters that are present in the model could be estimated, due to large number of the sample size.
+
+b. The given experiment has small sample size, that is small `n`, and large number of parameters `p`, hence the flexible statistical method cann't be used, as the already there are a large number of parameters, and now more parameters will include a large error in the model, since the sample size is small, and all cann't be obtained.
+
+c. When the relationship between the predictors and the response is highly non-linear, then it is better to use the flexible statitical learning, as it will fit a curve for the give model, which maybe better able to picture the model, since the relationship is not linear.
+
+d. If the variance of the error terms is extremely high, then if the flexible method is used, due to the risk of over-estimation, the error may increase all the more, due to addition of noise. Hence it is better to avoid the use of flexible statistical learning in all those cases.
+
+## Q2
+a. 
+```{r}
+knitr::include_graphics("/Users/huangjiajian/Desktop/471/WechatIMG1.jpeg")
+```
+
+b. The squared bias for the given experiment, keeps on decreasing monotonically along withe the increase in the flexibility of the experiment, since more the flexible is the experiment, less will be the bias, since the model is better able to describe the relationship.
+
+The variance keeps on increasing along with increasing in the flexibility, since withe inclusion of more variables, the variance of the errors will increase, since the risk of over-estimation increase all the more.
+
+The model gets a much better fit than the previous situation, but only up to an optimal level, where the model obtained is the best one to depict the nature of the response, and the variable, after which over-estimation leads to larger error variance, and deviation from the original model. Thus, the test MSE decrease, reaches the minimum and then increases, after attaining the optimum position.
+
+## Q3
+a.
+```{r}
+write.table(College, file = "College.csv", row.names=F, sep = ",")
+```
+
+```{r}
+college <- read.csv("college.csv")
+```
+
+b.
+```{r}
+head(college[,1:4])
+```
+
+c.
+```{r}
+summary(college)
+```
+
+```{r}
+pairs(college[,1:10])
+```
+
+Now the scatter plot for each of the variables, in the same widow is obtained by using the below given code, and the result thus obtained is also given above.
+
+```{r}
+plot(college$Private,college$Outstate, xlab = "Private University in US", ylab = "Outstate tuition in US", main = "Outstate Plot")
+```
+
+```{r}
+par(mfrow = c(2,2))
+hist(college$Top25perc, col = 3, xlab = "Top25perc", ylab = "Count")
+hist(college$PhD, col = 4, xlab = "PhD", ylab = "Count")
+hist(college$Grad.Rate, col = 5, xlab = "Grade rate", ylab = "Count")
+hist(college$Expend, col = 2, xlab = "Expend", ylab = "Count")
+```
+
+```{r}
+summary(college$Top25perc)
+summary(college$Grad.Rate)
+summary(college$PhD)
+summary(college$Expend)
+```
+
+
+# HW 2
+## Q1
+
+a.
+```{r}
+pairs(Auto)
+```
+
+b.
+```{r}
+cor(Auto[1:8])
+```
+
+c.
+```{r}
+fit <- lm(mpg ~ .-name, data = Auto)
+summary(fit)
+```
+
+From the p-value obtained above, it can be said that all the variables, except only the variables `horsepower`, `cylinder` and `acceleration` are statistically significant.
+
+The coefficient of `year` conveys that for unit change in the variable `year`, the variable under study changes by an amount of 0.7507, porvided all the other values are kept constant.
+
+d.
+```{r}
+par(mfrow = c(2,2))
+plot(fit)
+```
+
+e.
+```{r}
+fit1 <- lm(mpg ~ cylinders*displacement + displacement*weight, data = Auto)
+summary(fit1)
+```
+
+From the p-value, we could say that the relationship between `cylinder` and `displacement` is not statistically significant.
+
+f.
+```{r}
+par(mforw = c(2,2))
+plot(log(Auto$horsepower), Auto$mpg)
+plot(sqrt(Auto$horsepower), Auto$mpg)
+plot((Auto$horsepower)^2, Auto$mpg)
+```
+
+## Q15
+
+a.
+```{r}
+data(Boston)
+coefs <- data.frame("predictor"=character(0), "Estimate"=numeric(0), "Std.Error"=numeric(0), "t.value"=numeric(0), "Pr.t"=numeric(0), "r.squared"=numeric(0), stringsAsFactors = FALSE)
+j <- 1
+for(i in names(Boston)){
+  if(i != "crim"){
+    summ.lm.fit <- summary(lm(crim ~ eval(parse(text=i)), data=Boston))
+    coefs[j,] = c(i, summ.lm.fit$coefficients[2,], summ.lm.fit$r.squared)
+    j <- j+1
+  }
+}
+
+coefs[,-1] <- lapply(coefs[,-1], FUN=function(x) as.numeric(x))
+coefs <- coefs[order(coefs$r.squared, decreasing = T),]
+print(coefs)
+```
+
+By p-value parameters, all predictors have a relevant association with response, rejecting the null hypothesis. By the R2 parameter, the response variance explained by the predictor, the most meaningful and also the best t-value is the rad variable. Either the tax variable is very well associated with the response, and it is the second of higher `R2` value.
+
+b.
+```{r}
+lm.fit.b <- lm(crim ~ ., data=Boston)
+summary(lm.fit.b)
+```
+
+We can reject the null hypothesis for: zn, nox, dis, rad, black, lstat and medv. They’re 7 from 14 of the predictors.
+
+c.
+```{r}
+df = data.frame("mult"=summary(lm.fit.b)$coefficients[-1,1])
+df$simple <- NA
+for(i in row.names(df)){
+  df[row.names(df)==i, "simple"] = coefs[coefs[,1]==i, "Estimate"]
+}
+plot(df$simple, df$mult, xlab="Coef for Simple Linear Regression", ylab="Coef for Multiple Linear Regression")
+text(x=df$simple, y=df$mult, labels=row.names(df), cex=.7, col="blue", pos=4)
+```
+
+The `nox` variable appears with a large displacement, messing the neatness of the graph, so i’ll cut-off the `nox` to enhance the visualization.
+
+```{r}
+df.clean = df[!(row.names(df)%in%"nox"),]
+plot(df.clean$simple, df.clean$mult, xlab="Coef for Simple Linear Regression", ylab="Coef for Multiple Linear Regression")
+text(x=df.clean$simple, y=df.clean$mult, labels=row.names(df.clean), cex=.7, col="blue", pos=4)
+```
+
+d.
+```{r}
+coefs.poly <- data.frame("predictor"=character(0), "Estimate"=numeric(0), "Std.Error"=numeric(0), "t.value"=numeric(0), "Pr.t"=numeric(0), "r.squared"=numeric(0), stringsAsFactors = FALSE)
+j <- 1
+for(i in names(Boston)){
+  if(!(i %in% c("crim", "chas"))){
+    summ.lm.fit <- summary(lm(crim ~ poly(eval(parse(text=i)),3), data=Boston))
+    coefs.poly[j,] = c(i, summ.lm.fit$coefficients[2,], summ.lm.fit$r.squared)
+    j <- j+1}}
+coefs.poly[,-1] <- lapply(coefs.poly[,-1], FUN=function(x) as.numeric(x))
+coefs.poly <- coefs.poly[order(coefs.poly$r.squared, decreasing = T),]
+print(coefs.poly)
+```
+
+For better analysis, i plot a graph between the coefficients in the simple linear graph and simple linear model with polynomial order.
+
+```{r}
+df = data.frame("simple"=coefs[,2])
+row.names(df) <- coefs[, 1]
+df$poly <- NA
+for(i in coefs.poly[,1]){
+  df[row.names(df)==i, "poly"] <- coefs.poly[coefs.poly[,1]==i, "Estimate"]}
+plot(df$simple, df$poly, xlab="Coef for Simple Linear Regression", ylab="Coef for Poly Linear Regression")
+text(x=df$simple, y=df$poly, labels=row.names(df), cex=.7, col="blue", pos=4)
+```
+
+## Titanic
+
+```{r}
+library(titanic)
+```
+
+
+# HW 3
+## Q13
+
+```{r}
+summary(Boston)
+data("Boston")
+crim01 <- rep(0, length(Boston$crim))
+crim01[Boston$crim > median(Boston$crim)] <- 1
+Boston <- data.frame(Boston, crim01)
+summary(Boston)
+```
+
+```{r}
+set.seed(2019)
+train <- sample(1:dim(Boston)[1], dim(Boston)[1]*.7, rep=FALSE)
+test <- train
+Boston.train <- Boston[train, ]
+Boston.test <- Boston[test, ]
+crim01.test <- crim01[test]
+```
+
+```{r}
+fit.glm13 <- glm(crim01 ~ . - crim01 - crim, data = Boston, family = binomial)
+fit.glm13
+```
+
+```{r}
+fit.glm <- glm(crim01 ~ nox + indus + age + rad, data = Boston, family = binomial)
+```
+
+```{r}
+probs <- predict(fit.glm, Boston.test, type = "response")
+pred.glm <- rep(0, length(probs))
+pred.glm[probs > 0.5] <- 1
+table(pred.glm, crim01.test)
+```
+
+```{r}
+mean(pred.glm != crim01.test)
+```
+
+For the logistic regression, we have a test error rate of 12.5%.
+
+### LDA
+```{r}
+fit.lda <- lda(crim01 ~ nox + indus + age + rad , data = Boston)
+pred.lda <- predict(fit.lda, Boston.test)
+table(pred.lda$class, crim01.test)
+mean(pred.lda$class != crim01.test)
+```
+
+For the LDA regression model, we have a test error rate of 15.1%.
+
+### KNN
+```{r}
+data = scale(Boston[,-c(1,15)])
+set.seed(2019)
+train <- sample(1:dim(Boston)[1], dim(Boston)[1]*.7, rep=FALSE)
+test <- -train
+training_data = data[train, c("nox" , "indus" , "age" , "rad")]
+testing_data = data[test, c("nox" , "indus" , "age" , "rad")]
+train.crime01 = Boston$crim01[train]
+test.crime01= Boston$crim01[test]
+```
+
+```{r}
+set.seed(2019)
+knn_pred_y = knn(training_data, testing_data, train.crime01, k = 1)
+table(knn_pred_y, test.crime01)
+mean(knn_pred_y != test.crime01)
+```
+
+For this KNN (k=1), we have a test error rate of 9.21%
+
+```{r}
+knn_pred_y = NULL
+error_rate = NULL
+for(i in 1:dim(testing_data)[1]){
+set.seed(2019)
+knn_pred_y = knn(training_data,testing_data,train.crime01,k=i)
+error_rate[i] = mean(test.crime01 != knn_pred_y)
+}
+min_error_rate = min(error_rate)
+print(min_error_rate)
+```
+
+Minimum error rate is 6.57%.
+
+
+
+
+
+
+
+
